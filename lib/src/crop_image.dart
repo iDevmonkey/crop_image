@@ -488,6 +488,46 @@ class _CropImageState extends State<CropImage> {
         }
       }
     }
+    else {
+      final minAspectRatio = controller.minAspectRatio;
+      final maxAspectRatio = controller.maxAspectRatio;
+
+      if (minAspectRatio != null && maxAspectRatio != null) {
+        assert(minAspectRatio <= maxAspectRatio, 'maxAspectRatio cannot be less than minAspectRatio');
+      }
+
+      final width = right - left;
+      final height = bottom - top;
+      final currentAspectRatio = width / height;
+
+      if (maxAspectRatio != null && currentAspectRatio > maxAspectRatio) {
+        switch (type) {
+          case _CornerTypes.UpperLeft:
+          case _CornerTypes.LowerLeft:
+            left = right - height * maxAspectRatio;
+            break;
+          case _CornerTypes.UpperRight:
+          case _CornerTypes.LowerRight:
+            right = left + height * maxAspectRatio;
+            break;
+          default:
+            assert(false);
+        }
+      } else if (minAspectRatio != null && currentAspectRatio < minAspectRatio)  {
+        switch (type) {
+          case _CornerTypes.UpperLeft:
+          case _CornerTypes.UpperRight:
+            top = bottom - width / minAspectRatio;
+            break;
+          case _CornerTypes.LowerRight:
+          case _CornerTypes.LowerLeft:
+            bottom = top + width / minAspectRatio;
+            break;
+          default:
+            assert(false);
+        }
+      }
+    }
 
     controller.crop = Rect.fromLTRB(left, top, right, bottom).divide(size);
   }

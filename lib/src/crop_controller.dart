@@ -25,6 +25,8 @@ class CropController extends ValueNotifier<CropControllerValue> {
         value.crop,
         value.rotation,
         value.minimumImageSize,
+        minAspectRatio: value.minAspectRatio,
+        maxAspectRatio: value.maxAspectRatio,
       );
     }
     notifyListeners();
@@ -81,6 +83,13 @@ class CropController extends ValueNotifier<CropControllerValue> {
     notifyListeners();
   }
 
+  /// Min or Max Aspect ratio of the image (width / height).
+  ///
+  /// The [crop] rectangle will be adjusted to fit these ratio limit.
+  /// If [aspectRatio] be set, these limit not apply.
+  double? get minAspectRatio => value.minAspectRatio;
+  double? get maxAspectRatio => value.maxAspectRatio;
+
   /// Current crop rectangle of the image (pixels).
   ///
   /// [left], [right], [top] and [bottom] are in pixels.
@@ -123,7 +132,11 @@ class CropController extends ValueNotifier<CropControllerValue> {
     Rect defaultCrop = const Rect.fromLTWH(0, 0, 1, 1),
     CropRotation rotation = CropRotation.up,
     double minimumImageSize = 100,
+    double? minAspectRatio,
+    double? maxAspectRatio,
   })  : assert(aspectRatio != 0, 'aspectRatio cannot be zero'),
+        assert(minAspectRatio != 0, 'minAspectRatio cannot be zero'),
+        assert(maxAspectRatio != 0, 'maxAspectRatio cannot be zero'),
         assert(defaultCrop.left >= 0 && defaultCrop.left <= 1,
             'left should be 0..1'),
         assert(defaultCrop.right >= 0 && defaultCrop.right <= 1,
@@ -141,6 +154,8 @@ class CropController extends ValueNotifier<CropControllerValue> {
           defaultCrop,
           rotation,
           minimumImageSize,
+          minAspectRatio: minAspectRatio,
+          maxAspectRatio: maxAspectRatio,
         ));
 
   /// Creates a controller for a [CropImage] widget from an initial [CropControllerValue].
@@ -311,12 +326,17 @@ class CropControllerValue {
   final Rect crop;
   final CropRotation rotation;
   final double minimumImageSize;
+  final double? minAspectRatio;
+  final double? maxAspectRatio;
 
   const CropControllerValue(
     this.aspectRatio,
     this.crop,
     this.rotation,
-    this.minimumImageSize,
+    this.minimumImageSize, {
+      this.minAspectRatio,
+        this.maxAspectRatio,
+    }
   );
 
   CropControllerValue copyWith({
@@ -324,12 +344,16 @@ class CropControllerValue {
     Rect? crop,
     CropRotation? rotation,
     double? minimumImageSize,
+    double? minAspectRatio,
+    double? maxAspectRatio,
   }) =>
       CropControllerValue(
         aspectRatio ?? this.aspectRatio,
         crop ?? this.crop,
         rotation ?? this.rotation,
         minimumImageSize ?? this.minimumImageSize,
+        minAspectRatio: minAspectRatio ?? this.minAspectRatio,
+        maxAspectRatio: maxAspectRatio ?? this.maxAspectRatio,
       );
 
   @override
@@ -341,7 +365,9 @@ class CropControllerValue {
         other.aspectRatio == aspectRatio &&
         other.crop == crop &&
         other.rotation == rotation &&
-        other.minimumImageSize == minimumImageSize;
+        other.minimumImageSize == minimumImageSize &&
+        other.minAspectRatio == minAspectRatio &&
+        other.maxAspectRatio == maxAspectRatio;
   }
 
   @override
@@ -350,6 +376,8 @@ class CropControllerValue {
         crop.hashCode,
         rotation.hashCode,
         minimumImageSize.hashCode,
+        minAspectRatio.hashCode,
+    maxAspectRatio.hashCode,
       );
 }
 
@@ -368,8 +396,7 @@ class UiImageProvider extends ImageProvider<UiImageProvider> {
       SynchronousFuture<UiImageProvider>(this);
 
   @override
-  ImageStreamCompleter loadImage(
-          UiImageProvider key, ImageDecoderCallback decode) =>
+  ImageStreamCompleter loadBuffer(UiImageProvider key, DecoderBufferCallback decode) =>
       OneFrameImageStreamCompleter(_loadAsync(key));
 
   Future<ImageInfo> _loadAsync(UiImageProvider key) async {
